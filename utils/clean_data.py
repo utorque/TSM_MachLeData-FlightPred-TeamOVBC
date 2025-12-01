@@ -1,4 +1,4 @@
-# %%
+
 import pandas as pd
 
 df_business = pd.read_csv("../data/business.csv")
@@ -17,9 +17,4 @@ df['week'] = df['date'].dt.isocalendar().week
 print(df[['date','dayofweek','week','Class']])
 
 df.to_csv("../data/Flights.csv", index=False)
-
-
-# %% [markdown]
-# 
-
 
