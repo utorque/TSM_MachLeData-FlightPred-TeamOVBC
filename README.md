@@ -1,6 +1,13 @@
 # TSM MachLeData - Flight Price Prediction
 
-ML pipeline with continuous training, monitoring, and automated deployment.
+ML pipeline with drift detection, automated retraining, and model promotion to a FastAPI server.
+
+## Dataset
+Indian flight price prediction dataset obtained from “Ease My Trip” website.
+
+[Kaggle - Flight Price Prediction](https://www.kaggle.com/datasets/shubhambathwal/flight-price-prediction)
+
+*Note: Prices are expressed in Indian Rupees.*
 
 ## Run pipeline
 
@@ -8,95 +15,48 @@ ML pipeline with continuous training, monitoring, and automated deployment.
 python (or python3) -m "src.mlflow_pipeline"
 ```
 
-## Dataset
-[Kaggle - Flight Price Prediction](https://www.kaggle.com/datasets/shubhambathwal/flight-price-prediction)
+**Before running above command, make sure local FastAPI Server is running (see section below)**
 
-## Features
-- CI/CD with GitHub Actions
-- Data drift simulation (weekly splits)
-- Continuous model retraining
-- Performance & drift monitoring
-- Model optimization (pruning, quantization)
-- REST API deployment
+### Use cases
+o test different scenarios, the following parameters can be modified before execution:
+- DATA_DRIFT (False/True): Simulate artificial data drift for the current week
+- CONCEPT_DRIFT = (False/True): Simulate artificial concept drift for the current week
+- CURR_WEEK [7-13]: Fix the current week
+- LAST_TRAIN_WEEK [6-12]: Fix the last training week (useful for testing expanding data drift)
+
+### Notable scenarios
+- Without any simulated drift, running with `CURR_WEEK = 9` will automatically trigger drift detection and force retraining.
+Running a first instance with this week is useful to test data drift, concept drift, retraining and model promotion.
+- Running on next weeks will not trigger drift detection. Therefore, it helps to test model drift.
+
+Other combinations with or without simulated drift can also be tested.
 
 ## Setup docker - FastAPI Server
 
+To run the FastAPI server locally:
+
 ```
-# build image
-docker build -t flight-api -f docker/Dockerfile .
+# Start development container
+docker compose -f docker-compose.dev.yml up
 
-# run container
-docker run -p 8000:8000 flight-api
+# Access API
+http://localhost:52001/docs
 
-# access API
-http://localhost:8000/docs
+# Stop cleanly
+docker compose down
 ```
-## Plan Proposition
-GitHub Repo → GitHub Actions → MLflow (VM) → FastAPI (VM)
 
-### Components
-
-**On VM:**
-- MLflow tracking server (port 5000)
-- FastAPI app (port 8000)
-- Both running as systemd services or Docker containers
-
-**In GitHub:**
-- Code + 7 weekly data folders
-- GitHub Actions workflows
-- Secrets: VM_IP, SSH_KEY, MLFLOW_TRACKING_URI
-
----
-
-## GitHub Actions Workflows
-
-**1. `weekly_training.yml`** (Manual trigger with week parameter)
-- Load data for specified week
-- Train model
-- Log to MLflow (metrics, params, model)
-- Calculate drift vs previous week
-- If good → promote model in MLflow registry
-
-**2. `deploy.yml`** (Triggered after model promotion)
-- SSH into VM
-- Pull latest model from MLflow
-- Restart FastAPI service
-- Health check
-
-**3. `monitor.yml`** (Optional)
-- Query MLflow for last 7 days metrics
-- Generate drift report
-- Post to GitHub Issues if drift detected
-
----
+Note:
+- docker-compose.prod.yml is used for deployment on GCloud. The image is pull directly from Github package.
+- Because FastAPI uses SQLite during local runs, stored models are not persistent once the container restarts. Therefore, test scenarios should be performed in a single session.
 
 ## MLflow Usage
-```
-MLflow Tracking Server (VM)
-├── Experiments
-│   ├── week_1_training
-│   ├── week_2_training
-│   └── ...
-├── Models Registry
-│   └── flight_price_model
-│       ├── v1 (week_1)
-│       ├── v2 (week_2) [Production]
-│       └── ...
-└── Artifacts
-    ├── models/
-    ├── drift_reports/
-    └── feature_distributions/
-```
 
-**What goes in MLflow:**
-- Training: `mlflow.log_metrics()`, `mlflow.sklearn.log_model()`
-- Drift: `mlflow.log_artifact(drift_report.json)`
-- Production: `mlflow.register_model()` → stage to "Production"
+To launch the MLflow server and inspect pipeline logs:
 
----
-
-## Simple Execution Flow
 ```
-Week 1: Manual trigger workflow → Train → Log to MLflow → Deploy
-Week 2: Manual trigger workflow → Train → Detect drift → Log → Compare → Deploy if better
-Week 3-7: Repeat
+mlflow server
+
+# access Mflow
+http://localhost:5000
+```
