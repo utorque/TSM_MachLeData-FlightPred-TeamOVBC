@@ -22,7 +22,9 @@ o test different scenarios, the following parameters can be modified before exec
 - DATA_DRIFT (False/True): Simulate artificial data drift for the current week
 - CONCEPT_DRIFT = (False/True): Simulate artificial concept drift for the current week
 - CURR_WEEK [7-13]: Fix the current week
-- LAST_TRAIN_WEEK [6-12]: Fix the last training week (useful for testing expanding data drift)
+- LAST_TRAIN_WEEK [6-12]: Fix the last training week (only useful for testing expanding data drift)
+
+Note: LAST_TRAIN_WEEK does not affect training range, when model retrain is executed. Models are always train from week 6.
 
 ### Notable scenarios
 - Without any simulated drift, running with `CURR_WEEK = 9` will automatically trigger drift detection and force retraining.
@@ -43,7 +45,7 @@ docker compose -f docker-compose.dev.yml up
 http://localhost:52001/docs
 
 # Stop cleanly
-docker compose down
+docker compose -f docker-compose.dev.yml down
 ```
 
 Note:

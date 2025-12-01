@@ -16,36 +16,41 @@ from math import sqrt
 
 
 
-# ---------- CORE TRAINING FUNCTION ----------
-def train_model(df, nbweek, model_out=None):
+def train_model(df, CURRENT_WEEK, model_out=None):
     """
     Train XGBoost weekly model
-    df      : pandas DataFrame
-    nbweek  : nombre de semaines d'entraînement
-    return  : (model, {"mae":..,"rmse":..,"r2":..}, train_weeks, test_week)
+    df           : pandas DataFrame
+    CURRENT_WEEK : Current week
+    return       : (model, {"mae":..,"rmse":..,"r2":..})
     """
-
+    nbweek = CURRENT_WEEK -6
     required_cols = [
         "date","airline","ch_code","num_code","dep_time","from",
         "time_taken","stop","arr_time","to","price","Class","dayofweek","week"
     ]
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
-        raise ValueError(f"Colonnes manquantes dans le dataframe: {missing}")
-
-    # Convert / enrich
-    # /!\ MOVED TO DATA LOADER /!\
+        raise ValueError(f"Missing columns in the dataframe: {missing}")
 
     # Split weeks
     weeks_sorted = sorted(df["week"].dropna().astype(int).unique())
-    if len(weeks_sorted) < nbweek - 6:
-        raise ValueError(f"Pas assez de semaines dans les données (besoin: {nbweek+1}).")
+    if len(weeks_sorted) < nbweek :
+        raise ValueError(f"Not enough weeks in the data (need: {nbweek+1}).")
 
-    train_weeks = weeks_sorted[:nbweek-6]
-    test_week = weeks_sorted[nbweek-6]
+    df_train_list = []
+    df_test_list = []
 
-    df_train = df[df["week"].isin(train_weeks)].copy()
-    df_test = df[df["week"] == test_week].copy()
+    for w in weeks_sorted:
+        df_week = df[df["week"] == w].copy()
+        df_week = df_week.sample(frac=1, random_state=42)
+
+        split_idx = int(len(df_week) * 0.8)
+
+        df_train_list.append(df_week.iloc[:split_idx])
+        df_test_list.append(df_week.iloc[split_idx:])
+
+    df_train = pd.concat(df_train_list, ignore_index=True)
+    df_test  = pd.concat(df_test_list, ignore_index=True)
 
     # Feature / target
     target = "price"
@@ -57,12 +62,8 @@ def train_model(df, nbweek, model_out=None):
     X_train, y_train = df_train[feature_cols], df_train[target]
     X_test, y_test   = df_test[feature_cols], df_test[target]
 
-    # CRITICAL: Explicitly define categorical and numerical columns
-    # Don't rely on select_dtypes which can be unreliable
     cat_cols = ["airline", "ch_code", "from", "to", "Class"]
     num_cols = ["dayofweek", "num_code", "dep_hour", "arr_hour", "time_taken_minutes", "stops_n"]
-
-    # CRITICAL: Clean categorical columns - convert to string and handle NaN
     for col in cat_cols:
         X_train[col] = X_train[col].fillna("MISSING").astype(str)
         X_test[col] = X_test[col].fillna("MISSING").astype(str)
@@ -109,36 +110,12 @@ def train_model(df, nbweek, model_out=None):
         Path(model_out).parent.mkdir(parents=True, exist_ok=True)
         joblib.dump(model, model_out)
     
-    print(f"\nSemaines d'entraînement : {train_weeks}")
-    print(f"Semaine de test         : {test_week}")
-    print(f"MAE   : {metrics['mae']:.2f}")
-    print(f"RMSE  : {metrics['rmse']:.2f}")
-    print(f"R²    : {metrics['r2']:.4f}")
-
-    return model, metrics, train_weeks, test_week
-
-
-# ---------- CLI ENTRY POINT ----------
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--csv", type=str, default="../data/Flights.csv")
-    parser.add_argument("--nbweek", type=int, required=True)
-    parser.add_argument("--model-out", type=str, default=None)
-    args = parser.parse_args()
-
-    #TODO USE DATALOADER !!! sinon impossible de s'y retrouver et de tout refaire partout
-    # df = pd.read_csv(args.csv, parse_dates=["date"])
     
-    model, metrics, train_weeks, test_week = train_model(
-        df, args.nbweek, model_out=args.model_out
-    )
-
-    print(f"\nSemaines d'entraînement : {train_weeks}")
-    print(f"Semaine de test         : {test_week}")
+    print(f"\nTraining weeks : 6 to {CURRENT_WEEK}")
     print(f"MAE   : {metrics['mae']:.2f}")
     print(f"RMSE  : {metrics['rmse']:.2f}")
-    print(f"R²    : {metrics['r2']:.4f}")
+    print(f"R2    : {metrics['r2']:.4f}")
+
+    return model, metrics
 
 
-if __name__ == "__main__":
-    main()

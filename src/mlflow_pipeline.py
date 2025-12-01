@@ -30,20 +30,18 @@ with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:
 
     # Log training config
     log_model_train_info(training_dict, curr_week=CURR_WEEK)
-
     
     # Train if necessary
     if retrain_trigger:
         print('Drift detected, retrain model')
         
         # Unpack the tuple
-        model, metrics, train_weeks, test_week = train_model(train_data, CURR_WEEK)
+        model, metrics= train_model(train_data, CURR_WEEK)
         
         # Log metrics to MLflow
         with mlflow.start_run(run_name=f"metrics_week_{CURR_WEEK}", nested=True):
             mlflow.log_metrics(metrics)
-            mlflow.log_param("train_weeks", str(train_weeks))
-            mlflow.log_param("test_week", test_week)
+            mlflow.log_param("train_weeks", f"6-{CURR_WEEK}")
         
         # Post ONLY the model (not the tuple)
         result = post_new_model(
