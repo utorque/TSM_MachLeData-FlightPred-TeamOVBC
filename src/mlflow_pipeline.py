@@ -18,6 +18,14 @@ if ENV_MODE == 'local':
 else:
     SERVER_URL = 'https://flightpred-api-376025128405.europe-west6.run.app'
 
+if not (7 <= CURR_WEEK <= 13):
+    raise ValueError("Error: CURR_WEEK must be in [7, 13]")
+if not (6 <= LAST_TRAIN_WEEK <= 12):
+    raise ValueError("Error: LAST_TRAIN_WEEK must be in [6, 12]")
+
+if CURR_WEEK <= LAST_TRAIN_WEEK:
+    raise ValueError("Error: CURR_WEEK must be greater than LAST_TRAIN_WEEK")
+
 mlflow.set_experiment('Flight_Model_Training')
 
 with mlflow.start_run(run_name=f'week_{CURR_WEEK}') as parent_run:

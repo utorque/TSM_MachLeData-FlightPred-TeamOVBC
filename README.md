@@ -18,7 +18,7 @@ python (or python3) -m "src.mlflow_pipeline"
 **Before running above command, make sure local FastAPI Server is running (see section below)**
 
 ### Use cases
-o test different scenarios, the following parameters can be modified before execution:
+To test different scenarios, the following parameters can be modified before execution:
 - DATA_DRIFT (False/True): Simulate artificial data drift for the current week
 - CONCEPT_DRIFT = (False/True): Simulate artificial concept drift for the current week
 - CURR_WEEK [7-13]: Fix the current week
@@ -32,6 +32,8 @@ Running a first instance with this week is useful to test data drift, concept dr
 - Running on next weeks will not trigger drift detection. Therefore, it helps to test model drift.
 
 Other combinations with or without simulated drift can also be tested.
+
+Tip: To achieve significantly faster response times and avoid network latency, it is recommended to experiment and test the pipeline locally on Docker whenever possible.
 
 ## Setup docker - FastAPI Server
 
