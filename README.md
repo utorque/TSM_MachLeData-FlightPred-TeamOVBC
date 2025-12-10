@@ -2,7 +2,7 @@
 
 ML pipeline with drift detection, automated retraining, and model promotion to a FastAPI server.
 
-Available FastAPI: https://flightpred-api-376025128405.europe-west6.run.app/
+Available FastAPI: https://flightpred-api-376025128405.europe-west6.run.app/docs
 
 ## Dataset
 Indian flight price prediction dataset obtained from “Ease My Trip” website.
