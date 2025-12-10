@@ -2,12 +2,30 @@
 
 ML pipeline with drift detection, automated retraining, and model promotion to a FastAPI server.
 
+Available FastAPI: https://flightpred-api-376025128405.europe-west6.run.app/
+
 ## Dataset
 Indian flight price prediction dataset obtained from “Ease My Trip” website.
 
 [Kaggle - Flight Price Prediction](https://www.kaggle.com/datasets/shubhambathwal/flight-price-prediction)
 
-*Note: Prices are expressed in Indian Rupees.*
+*Note: Prices are expressed in Indian Rupees. They are converted in the pipeline*
+
+## Project structure
+
+- data: Raw and processed data
+- exploration: Early drift exploration (not used in final pipeline)
+- fastapi_server: FastAPI application
+- models: Model training logic
+- src: MLflow pipeline main script
+- utils: Helper modules used across the pipeline
+
+## Setup
+
+```
+python (or python3) -m venv venv
+pip install -r requirements.txt
+```
 
 ## Run pipeline
 
