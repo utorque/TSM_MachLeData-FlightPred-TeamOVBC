@@ -32,12 +32,13 @@ def plot_concept_drift(corr_by_week, output_dir):
     plt.savefig(os.path.join(output_dir, "corr_evolution_heatmap.png"))
     plt.close()
 
-def compute_concept_drift(data, report_path, target="price"):
+def compute_concept_drift(data, last_train_week, report_path, target="price"):
     '''Compute concept drift tests'''
 
     numerical_cols = data.select_dtypes(include=[np.number]).columns.drop(target, errors="ignore")
     categorical_cols = data.select_dtypes(exclude=[np.number]).columns
     weeks = sorted(data["week"].unique())
+    weeks = [w for w in weeks if w >= last_train_week]
 
     categorical_cols = categorical_cols.drop("date")
 

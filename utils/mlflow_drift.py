@@ -74,7 +74,7 @@ def check_and_log_drift(train_df, current_week, last_train_week, GLOBAL_DRIFT_TH
 
     with mlflow.start_run(run_name=f'drift_check_week_{current_week}', nested=True):
 
-        # --- Rolling Data drift ---
+        # Rolling Data drift
         data_drift_results = rolling_drift(train_df, report_path='report/')
 
         result_path = f'report/data_drift_rolling_week_{current_week-1}_vs_{current_week}.csv'
@@ -94,7 +94,7 @@ def check_and_log_drift(train_df, current_week, last_train_week, GLOBAL_DRIFT_TH
         for png_file in png_files:
             mlflow.log_artifact(png_file, artifact_path='rolling')
 
-        # --- Expanding Data drift ---
+        # Expanding Data drift
         expanding_drift_results = expanding_drift(
             train_df, 
             report_path='report/', 
@@ -119,8 +119,8 @@ def check_and_log_drift(train_df, current_week, last_train_week, GLOBAL_DRIFT_TH
         for png_file in png_files:
             mlflow.log_artifact(png_file, artifact_path='expanding')
 
-        # --- Concept drift ---
-        drift_df = compute_concept_drift(train_df, report_path='report/')
+        # Concept drift
+        drift_df = compute_concept_drift(train_df, last_train_week, report_path='report/')
 
         concept_drift_mean = drift_df['mean_corr_diff'].mean()
         concept_drift_detected = concept_drift_mean > CONCEPT_DRIFT_THRESHOLD
@@ -131,7 +131,7 @@ def check_and_log_drift(train_df, current_week, last_train_week, GLOBAL_DRIFT_TH
         mlflow.log_artifact('report/concept_drift_results.csv', artifact_path='concept')
         mlflow.log_artifact('report/corr_evolution_heatmap.png', artifact_path='concept')
 
-        # --- Retrain trigger ---
+        # Retrain trigger
         global_drift_score = (
             0.40 * rolling_data_drift_ratio
             + 0.30 * expanding_data_drift_ratio
